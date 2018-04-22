@@ -43,9 +43,15 @@ class DBSCAN:
         distance_matrix = pdist(data)  # Condensed pair-wise distance matrix
         n = len(data)
         self.core_sample_indices_ = self._get_core_sample_indices(n, distance_matrix)
-        self.components_ = data.take(self.core_sample_indices_, axis=0)
+        self.components_ = self._get_components(data)
         self.labels_ = self._get_labels(data, distance_matrix)
         return self
+
+    def _get_components(self, data: ndarray) -> ndarray:
+        if self.core_sample_indices_.size == 0:
+            return np.array([])
+        else:
+            return data.take(self.core_sample_indices_, axis=0)
 
     def _get_labels(self, data: ndarray, distance_matrix: ndarray) -> ndarray:
         labels = [-1 for _ in data]
