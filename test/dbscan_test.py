@@ -6,9 +6,15 @@ from scipy.spatial.distance import pdist
 
 from dbscan import DBSCAN
 from dbscan.dbscan import get_distances_from_other_points
+from dbscan.dbscan import get_indices_of_points_within_eps
 
 
 class DBSCANTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.eps = 1.5
+        cls.min_samples = 3
 
     @staticmethod
     def get_two_clusters() -> ndarray:
@@ -30,7 +36,7 @@ class DBSCANTest(unittest.TestCase):
 
     def fit(self):
         data = self.get_two_clusters()
-        dbscan = DBSCAN(eps=1.5, min_samples=3)
+        dbscan = DBSCAN(eps=self.eps, min_samples=self.min_samples)
         dbscan.fit(data)
         return dbscan
 
@@ -78,6 +84,14 @@ class DBSCANTest(unittest.TestCase):
         distance_matrix = pdist(data)
         num_points = len(data)
         return get_distances_from_other_points(point_index, num_points, distance_matrix)
+
+    def test_get_indices_of_points_within_eps(self):
+        expected_indices = np.array([0, 2])
+        data = self.get_two_clusters()
+        n = len(data)
+        distance_matrix = pdist(data)
+        indices = get_indices_of_points_within_eps(1, n, distance_matrix, self.eps)
+        assert np.array_equal(expected_indices, indices)
 
 
 if __name__ == '__main__':

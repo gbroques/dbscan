@@ -1,9 +1,9 @@
-from itertools import chain
-from itertools import repeat
-
 import numpy as np
 from numpy import ndarray
 from scipy.spatial.distance import pdist
+
+from .distance_matrix import condensed_to_square
+from .distance_matrix import get_condensed_indices
 
 
 class DBSCAN:
@@ -40,11 +40,26 @@ class DBSCAN:
         Returns:
             self
         """
-        distance_matrix = pdist(data)
+        distance_matrix = pdist(data)  # Condensed pair-wise distance matrix
         n = len(data)
         self.core_sample_indices_ = self._get_core_sample_indices(n, distance_matrix)
         self.components_ = data.take(self.core_sample_indices_, axis=0)
+        self.labels_ = self._get_labels(data, distance_matrix)
         return self
+
+    def _get_labels(self, data: ndarray, distance_matrix: ndarray) -> ndarray:
+        labels = [-1 for _ in data]
+        n = len(data)
+        current_cluster_label = -1
+        for i, core_point in zip(self.core_sample_indices_, self.components_):
+            if labels[i] == -1:
+                current_cluster_label += 1
+                labels[i] = current_cluster_label
+            neighborhood = get_indices_of_points_within_eps(i, n, distance_matrix, self._eps)
+            for point_i in neighborhood:
+                if labels[point_i] == -1:
+                    labels[point_i] = current_cluster_label
+        return np.array(labels)
 
     def _get_core_sample_indices(self, n: int, distance_matrix: ndarray) -> ndarray:
         """Get the indices of each core point.
@@ -77,23 +92,15 @@ def get_distances_from_other_points(i: int, n: int, distance_matrix: ndarray):
     Returns:
         Distance from point i to other points in the dataset.
     """
-    square_indices = zip(repeat(i, n), chain(range(0, i), range(i + 1, n)))
-    condensed_indices = [square_to_condensed(*square_index, n) for square_index in square_indices]
+    condensed_indices = get_condensed_indices(i, n)
     return distance_matrix.take(condensed_indices)
 
 
-def square_to_condensed(i: int, j: int, n: int):
-    """Maps a square index to a condensed index for a given matrix position (i, j).
-
-    Args:
-        i: Index i.
-        j: Index j.
-        n: The dimension of the matrix.
-
-    Returns:
-        Condensed index.
-    """
-    assert i != j, 'No diagonal elements in condensed matrix'
-    if i < j:
-        i, j = j, i
-    return n * j - j * (j + 1) / 2 + i - 1 - j
+def get_indices_of_points_within_eps(i: int, n: int, distance_matrix: ndarray, eps: float) -> ndarray:
+    condensed_indices = get_condensed_indices(i, n)
+    condensed_indices_np = np.array(condensed_indices)
+    indices = np.where(distance_matrix.take(condensed_indices) < eps)
+    condensed_indices_within_eps = condensed_indices_np[indices]
+    square_indices_within_eps = map(lambda e: condensed_to_square(e, n), condensed_indices_within_eps)
+    indices = [[e for e in t if e != i][0] for t in square_indices_within_eps]
+    return np.array(indices)
