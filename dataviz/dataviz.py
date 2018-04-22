@@ -10,6 +10,24 @@ import pandas as pd
 import seaborn as sns
 
 
+def plot_data(data: np.ndarray) -> None:
+    """Plot data.
+
+    Args:
+        data: Data to plot.
+
+    Returns:
+        None
+    """
+    columns = ['x', 'y']
+    df = pd.DataFrame(data, columns=columns)
+    g = sns.lmplot(*columns,
+                   data=df,
+                   fit_reg=False,
+                   legend=False)
+    plt.show()
+
+
 def plot_clusters(clusters: np.ndarray, labels: np.ndarray, components: np.ndarray, seed=0) -> None:
     """Plot cluster data as circles with a different color for each cluster.
 
@@ -31,11 +49,11 @@ def plot_clusters(clusters: np.ndarray, labels: np.ndarray, components: np.ndarr
     if contains_noise:
         clusters, labels, noise = separate_noise(clusters, labels)
     num_clusters = len(np.unique(labels))
-
+    contains_components = components.size > 0
     columns = ['x', 'y']
     data = get_data(clusters, labels, components, columns, noise)
-    markers = get_markers(num_clusters, contains_noise)
-    palette = get_palette(num_clusters, contains_noise, seed)
+    markers = get_markers(num_clusters, contains_noise, contains_components)
+    palette = get_palette(num_clusters, contains_noise, contains_components, seed)
     g = sns.lmplot(*columns,
                    data=data,
                    markers=markers,
@@ -87,12 +105,14 @@ def get_data(clusters, labels, components, columns, noise=None) -> pd.DataFrame:
 
 
 def append_data_frame(df, columns, data, label) -> pd.DataFrame:
+    if data.size == 0:
+        return df
     components_df = pd.DataFrame(data, columns=columns)
     components_df['labels'] = [label for _ in range(len(data))]
     return df.append(components_df, ignore_index=True)
 
 
-def get_markers(num_clusters: int, contains_noise: bool) -> List[str]:
+def get_markers(num_clusters: int, contains_noise: bool, contains_components: bool) -> List[str]:
     """Generate the marks for the plot.
 
     Uses circles 'o' for points,
@@ -102,18 +122,20 @@ def get_markers(num_clusters: int, contains_noise: bool) -> List[str]:
     Args:
         num_clusters: The number of clusters.
         contains_noise: Whether the dataset contains noise points.
+        contains_components: Whether the dataset contains core points.
 
     Returns:
         A list of markers.
     """
     markers = ['o' for _ in range(num_clusters)]
-    markers.append('x')  # Use crosses 'x' for core points
+    if contains_components:
+        markers.append('x')  # Use crosses 'x' for core points
     if contains_noise:
         markers.append('.')  # Use points '.' for noise points
     return markers
 
 
-def get_palette(num_clusters: int, contains_noise: bool, seed=0) -> List[str]:
+def get_palette(num_clusters: int, contains_noise: bool, contains_components: bool, seed=0) -> List[str]:
     """Generates a color palette for the plot.
 
     Uses random colors for different clusters,
@@ -122,6 +144,7 @@ def get_palette(num_clusters: int, contains_noise: bool, seed=0) -> List[str]:
     Args:
         num_clusters: The number of clusters.
         contains_noise: Whether the dataset contains noise.
+        contains_components: Whether the dataset contains core points.
         seed: Seed for random number generator.
 
     Returns:
@@ -131,7 +154,8 @@ def get_palette(num_clusters: int, contains_noise: bool, seed=0) -> List[str]:
     all_colors = ['b', 'g', 'c', 'm', 'orange',
                   'darkturquoise', 'mediumpurple', 'tomato']
     palette = random.sample(all_colors, num_clusters)
-    palette.append('red')  # Reserve red color for core points
+    if contains_components:
+        palette.append('red')  # Reserve red color for core points
     if contains_noise:
         palette.append('k')  # Reserve black color for noise points
     return palette
@@ -140,8 +164,8 @@ def get_palette(num_clusters: int, contains_noise: bool, seed=0) -> List[str]:
 def generate_clusters(num_clusters: int,
                       num_points: int,
                       spread: float,
-                      bound_for_x: Tuple[float, float],
-                      bound_for_y: Tuple[float, float],
+                      x_bounds: Tuple[float, float],
+                      y_bounds: Tuple[float, float],
                       seed=None) -> List[List]:
     """Generate random data for clustering.
 
@@ -152,16 +176,16 @@ def generate_clusters(num_clusters: int,
         num_clusters: The number of clusters to generate.
         num_points: The number of points to generate.
         spread: The spread of each cluster. Decrease for tighter clusters.
-        bound_for_x: The bounds for possible values of X.
-        bound_for_y: The bounds for possible values of Y.
+        x_bounds: The bounds for possible values of X.
+        y_bounds: The bounds for possible values of Y.
         seed: Seed for the random number generator.
 
     Returns:
         K clusters consisting of N points.
     """
     random = Random(seed)
-    x_min, x_max = bound_for_x
-    y_min, y_max = bound_for_y
+    x_min, x_max = x_bounds
+    y_min, y_max = y_bounds
     num_points_per_cluster = int(num_points / num_clusters)
     clusters = []
     for _ in range(num_clusters):
