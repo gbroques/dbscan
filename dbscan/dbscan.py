@@ -1,5 +1,7 @@
-from itertools import repeat
 from itertools import chain
+from itertools import repeat
+
+import numpy as np
 from numpy import ndarray
 from scipy.spatial.distance import pdist
 
@@ -39,7 +41,28 @@ class DBSCAN:
             self
         """
         distance_matrix = pdist(data)
+        n = len(data)
+        self.core_sample_indices_ = self._get_core_sample_indices(n, distance_matrix)
         return self
+
+    def _get_core_sample_indices(self, n: int, distance_matrix: ndarray) -> ndarray:
+        """Get the indices of each core point.
+
+        Args:
+            n: Number of points in the dataset.
+            distance_matrix: Condensed distance matrix.
+
+        Returns:
+            Indices of each core point.
+        """
+        core_sample_indices = []
+        for i in range(n):
+            distances = get_distances_from_other_points(i, n, distance_matrix)
+            less_than_eps = np.where(distances < self._eps, 1, 0)
+            num_less_than_eps = np.count_nonzero(less_than_eps) + 1  # + 1 includes the point itself
+            if num_less_than_eps >= self._min_samples:
+                core_sample_indices.append(i)
+        return np.array(core_sample_indices)
 
 
 def get_distances_from_other_points(i: int, n: int, distance_matrix: ndarray):

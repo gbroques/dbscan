@@ -28,16 +28,26 @@ class DBSCANTest(unittest.TestCase):
                          [6, 8], [7, 7], [8, 6],
                          [1, 8]])
 
-    def test_fit(self):
-        expected_labels = np.array([0, 0, 0, 1, 1, 1, -1])
-        expected_core_sample_indices = np.array([1, 4])
-        expected_components = np.array([[2, 2], [7, 7]])
+    def fit(self):
         data = self.get_two_clusters()
         dbscan = DBSCAN(eps=1.5, min_samples=3)
         dbscan.fit(data)
-        self.assertEqual(expected_labels, dbscan.labels_)
-        self.assertEqual(expected_core_sample_indices, dbscan.core_sample_indices_)
-        self.assertEqual(expected_components, dbscan.components_)
+        return dbscan
+
+    def test_core_sample_indices(self):
+        expected_core_sample_indices = np.array([1, 4])
+        dbscan = self.fit()
+        np.testing.assert_equal(expected_core_sample_indices, dbscan.core_sample_indices_)
+
+    def test_components(self):
+        expected_components = np.array([[2, 2], [7, 7]])
+        dbscan = self.fit()
+        np.testing.assert_equal(expected_components, dbscan.components_)
+
+    def test_labels(self):
+        expected_labels = np.array([0, 0, 0, 1, 1, 1, -1])
+        dbscan = self.fit()
+        np.testing.assert_equal(expected_labels, dbscan.labels_)
 
     def test_get_distances_from_other_points_with_index_zero(self):
         expected_distances_from_other_points = np.array([1.4142135, 2.8284271, 7.0710678,
