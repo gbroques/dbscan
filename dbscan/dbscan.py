@@ -43,6 +43,7 @@ class DBSCAN:
         distance_matrix = pdist(data)
         n = len(data)
         self.core_sample_indices_ = self._get_core_sample_indices(n, distance_matrix)
+        self.components_ = data.take(self.core_sample_indices_, axis=0)
         return self
 
     def _get_core_sample_indices(self, n: int, distance_matrix: ndarray) -> ndarray:
