@@ -5,28 +5,37 @@ from random import Random
 from typing import List, Tuple
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 
 
-def plot_clusters(clusters: List[List], labels: List[int], centroids: List[List], seed=0) -> None:
-    """Plot cluster data.
+def plot_clusters(clusters: np.ndarray, labels: np.ndarray, components: np.ndarray, seed=0) -> None:
+    """Plot cluster data as circles with a different color for each cluster.
+
+    Plots core points as red crosses,
+    and noise points as black points.
 
     Args:
         clusters: Cluster data to plot.
         labels: Labels of each point.
-        centroids: Center point of each cluster.
+        components: Core points.
         seed: Seed for random number generator.
               Used to sample colors.
 
     Returns:
         None
     """
+    noise = None
+    contains_noise = any(labels == -1)
+    if contains_noise:
+        clusters, labels, noise = separate_noise(clusters, labels)
+    num_clusters = len(np.unique(labels))
+
     columns = ['x', 'y']
-    num_clusters = len(set(labels))
-    data = get_data(clusters, labels, centroids, columns)
-    markers = get_markers(num_clusters)
-    palette = get_palette(num_clusters, seed)
+    data = get_data(clusters, labels, components, columns, noise)
+    markers = get_markers(num_clusters, contains_noise)
+    palette = get_palette(num_clusters, contains_noise, seed)
     g = sns.lmplot(*columns,
                    data=data,
                    markers=markers,
@@ -38,44 +47,73 @@ def plot_clusters(clusters: List[List], labels: List[int], centroids: List[List]
     plt.show()
 
 
-def get_data(clusters, labels, centroids, columns) -> pd.DataFrame:
+def separate_noise(clusters: np.ndarray, labels: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Separate noise points from clusters.
+
+    Args:
+        clusters: Cluster data.
+        labels: The cluster each point belongs to.
+                -1 is the label used for noise points.
+
+    Returns:
+        Clusters without noise, labels without noise, and noise points.
+    """
+    noise_indices = np.where(labels == -1)
+    noise = clusters.take(noise_indices, axis=0)[0]
+    clusters_without_noise = np.delete(clusters, noise_indices, axis=0)
+    labels_without_noise = np.delete(labels, noise_indices)
+    return clusters_without_noise, labels_without_noise, noise
+
+
+def get_data(clusters, labels, components, columns, noise=None) -> pd.DataFrame:
     """Construct a DataFrame object to plot.
 
     Args:
         clusters: The cluster data.
         labels: Which cluster each point belongs to.
-        centroids: The center point of each cluster.
+        components: Core points.
         columns: Labels for each column of data.
+        noise: Noise points.
 
     Returns:
-
+        Data frame for plotting.
     """
     df = pd.DataFrame(clusters, columns=columns)
     df['labels'] = pd.Series(labels, index=df.index)  # Add labels as a column for coloring
-    centroids_df = pd.DataFrame(centroids, columns=columns)
-    centroids_df['labels'] = ['centroid' for _ in range(len(centroids))]
-    df = df.append(centroids_df, ignore_index=True)
+    df = append_data_frame(df, columns, components, 'core_point')
+    if noise is not None:
+        df = append_data_frame(df, columns, noise, 'noise_point')
     return df
 
 
-def get_markers(num_clusters) -> List[str]:
+def append_data_frame(df, columns, data, label) -> pd.DataFrame:
+    components_df = pd.DataFrame(data, columns=columns)
+    components_df['labels'] = [label for _ in range(len(data))]
+    return df.append(components_df, ignore_index=True)
+
+
+def get_markers(num_clusters: int, contains_noise: bool) -> List[str]:
     """Generate the marks for the plot.
 
     Uses circles 'o' for points,
-    and crosses 'x' for centroids.
+    crosses 'x' for core points,
+    and points ',' for noise points.
 
     Args:
         num_clusters: The number of clusters.
+        contains_noise: Whether the dataset contains noise points.
 
     Returns:
         A list of markers.
     """
     markers = ['o' for _ in range(num_clusters)]
-    markers.append('x')  # Reserve 'x' for centroids
+    markers.append('x')  # Use crosses 'x' for core points
+    if contains_noise:
+        markers.append('.')  # Use points '.' for noise points
     return markers
 
 
-def get_palette(num_clusters, seed=0) -> List[str]:
+def get_palette(num_clusters: int, contains_noise: bool, seed=0) -> List[str]:
     """Generates a color palette for the plot.
 
     Uses random colors for different clusters,
@@ -83,15 +121,18 @@ def get_palette(num_clusters, seed=0) -> List[str]:
 
     Args:
         num_clusters: The number of clusters.
+        contains_noise: Whether the dataset contains noise.
         seed: Seed for random number generator.
 
     Returns:
-
+        A list of colors used for plotting.
     """
     random = Random(seed)
     all_colors = ['b', 'g', 'c', 'm', 'orange']
     palette = random.sample(all_colors, num_clusters)
-    palette.append('red')  # Reserve red color for centroids
+    palette.append('red')  # Reserve red color for core points
+    if contains_noise:
+        palette.append('k')  # Reserve black color for noise points
     return palette
 
 
