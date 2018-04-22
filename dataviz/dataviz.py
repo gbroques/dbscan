@@ -128,7 +128,8 @@ def get_palette(num_clusters: int, contains_noise: bool, seed=0) -> List[str]:
         A list of colors used for plotting.
     """
     random = Random(seed)
-    all_colors = ['b', 'g', 'c', 'm', 'orange']
+    all_colors = ['b', 'g', 'c', 'm', 'orange',
+                  'darkturquoise', 'mediumpurple', 'tomato']
     palette = random.sample(all_colors, num_clusters)
     palette.append('red')  # Reserve red color for core points
     if contains_noise:
