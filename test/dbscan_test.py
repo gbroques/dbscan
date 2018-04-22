@@ -68,6 +68,14 @@ class DBSCANTest(unittest.TestCase):
         np.testing.assert_equal(expected_components, dbscan.components_)
         np.testing.assert_equal(expected_labels, dbscan.labels_)
 
+    def test_raises_error_for_invalid_eps(self):
+        with self.assertRaises(ValueError):
+            DBSCAN(eps=0)
+
+    def test_raises_error_for_invalid_min_samples(self):
+        with self.assertRaises(ValueError):
+            DBSCAN(min_samples=0)
+
     def test_get_distances_from_other_points_with_index_zero(self):
         expected_distances_from_other_points = np.array([1.4142135, 2.8284271, 7.0710678,
                                                          7.2111025, 7.6157731, 5.0000000])

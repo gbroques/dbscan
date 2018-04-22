@@ -25,11 +25,23 @@ class DBSCAN:
     """
 
     def __init__(self, eps: float = 0.5, min_samples: int = 5):
+        self._check_eps(eps)
+        self._check_min_samples(min_samples)
         self._eps = eps
         self._min_samples = min_samples
         self.core_sample_indices_ = None
         self.components_ = None
         self.labels_ = None
+
+    @staticmethod
+    def _check_eps(eps: float) -> None:
+        if eps <= 0:
+            raise ValueError('eps must be a positive floating point number. {} given.'.format(eps))
+
+    @staticmethod
+    def _check_min_samples(min_samples: int) -> None:
+        if min_samples <= 0 or not isinstance(min_samples, int):
+            raise ValueError('min_samples must be a positive integer. {} given.'.format(min_samples))
 
     def fit(self, data: ndarray) -> 'DBSCAN':
         """Perform DBSCAN clustering on features.
