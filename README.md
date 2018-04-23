@@ -1,5 +1,8 @@
 # DBSCAN
 
+[![Build Status](https://travis-ci.org/gbroques/dbscan.svg?branch=master)](https://travis-ci.org/gbroques/dbscan)
+[![Coverage Status](https://coveralls.io/repos/github/gbroques/dbscan/badge.svg?branch=master)](https://coveralls.io/github/gbroques/dbscan?branch=master)
+
 Density-Based Spatial Clustering of Applications with Noise (DBSCAN) implementation in Python.
 
 API inspired by Scikit-learn.
