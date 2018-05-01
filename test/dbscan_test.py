@@ -6,7 +6,7 @@ from scipy.spatial.distance import pdist
 
 from dbscan import DBSCAN
 from dbscan.dbscan import get_distances_from_other_points
-from dbscan.dbscan import get_indices_of_points_within_eps
+from dbscan.dbscan import get_neighboring_point_indices
 
 
 class DBSCANTest(unittest.TestCase):
@@ -111,7 +111,7 @@ class DBSCANTest(unittest.TestCase):
         data = self.get_two_clusters()
         n = len(data)
         distance_matrix = pdist(data)
-        indices = get_indices_of_points_within_eps(1, n, distance_matrix, self.eps)
+        indices = get_neighboring_point_indices(1, n, distance_matrix, self.eps)
         assert np.array_equal(expected_indices, indices)
 
 
