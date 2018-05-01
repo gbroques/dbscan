@@ -17,7 +17,7 @@ class DBSCAN:
     Args:
         eps: The maximum distance between two samples for them to be considered in the same neighborhood.
         min_samples: The number of samples in a neighborhood for a point to be considered a core point.
-                           This includes the point itself.
+                     This includes the point itself.
 
     Attributes:
         core_sample_indices_ (list): Indices of core samples.
