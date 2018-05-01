@@ -101,7 +101,7 @@ class DBSCAN:
             labels: Cluster labels.
             seed_point_index: Index of point from which to grow the cluster.
             neighborhood: Indices of points within the neighborhood of the seed point.
-            cluster_label: The current cluster label of the seed point..
+            cluster_label: The current cluster label of the seed point.
 
         Returns:
             None
@@ -112,7 +112,7 @@ class DBSCAN:
             neighboring_point = neighborhood[i]
 
             if labels[neighboring_point] == NOISE_LABEL:
-                labels[neighboring_point] = cluster_label
+                labels[neighboring_point] = cluster_label  # Label border point
             elif labels[neighboring_point] == DEFAULT_LABEL:
                 labels[neighboring_point] = cluster_label
 
